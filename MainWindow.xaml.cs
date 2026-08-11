@@ -31,7 +31,10 @@ public partial class MainWindow : Window
         ServerList.ItemsSource = _servers;
         RefreshAll();
         Status("Ready.");
-        _ = CheckUpdates(silent: true);
+        // Not from the constructor: Application.Run() hasn't installed the dispatcher
+        // SynchronizationContext yet, so the await inside would resume on a thread-pool thread and
+        // every UI touch after it throws. By Loaded, the context exists and awaits come back here.
+        Loaded += async (_, _) => await CheckUpdates(silent: true);
     }
 
     // ---- shell ----
@@ -299,6 +302,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
+            Core.LogUpdateError(ex);
             if (!silent) Status("Update check failed: " + ex.Message, true);
         }
     }

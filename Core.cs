@@ -164,7 +164,19 @@ public static class Core
             var mgr = new UpdateManager(new GithubSource(UpdateRepo, null, false));
             return mgr.IsInstalled ? mgr : null;
         }
-        catch { return null; }
+        catch (Exception ex) { LogUpdateError(ex); return null; }
+    }
+
+    // An update that silently never arrives is the worst failure this app has - it looks like nothing
+    // is wrong forever. Leave a trail next to the config.
+    public static void LogUpdateError(Exception ex)
+    {
+        try
+        {
+            Directory.CreateDirectory(AppDir);
+            File.AppendAllText(Path.Combine(AppDir, "update.log"), $"{DateTime.Now:s}  {ex}{Environment.NewLine}{Environment.NewLine}");
+        }
+        catch { /* logging must never be the thing that breaks the app */ }
     }
 
     public static string CurrentVersion =>
