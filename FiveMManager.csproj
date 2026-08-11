@@ -10,7 +10,7 @@
     <RootNamespace>FiveMManager</RootNamespace>
     <ApplicationIcon>logo.ico</ApplicationIcon>
     <NoWarn>$(NoWarn);WPF0001</NoWarn>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
     <!-- Velopack needs to run before any UI exists, so App owns an explicit Main instead of letting
          the WPF SDK generate one. That means App.xaml is a Page, not the ApplicationDefinition. -->
     <StartupObject>FiveMManager.App</StartupObject>

@@ -60,6 +60,7 @@ public partial class MainWindow : Window
     {
         PathBox.Text = _cfg.FiveMAppPath;
         LinkedBox.Text = string.Join(Environment.NewLine, _cfg.LinkedPaths);
+        LaunchWithBox.Text = string.Join(Environment.NewLine, _cfg.LaunchWith);
         DelayBox.Text = _cfg.BootDelaySeconds.ToString();
         VersionText.Text = $"Version {Core.CurrentVersion}";
         RefreshAccounts();
@@ -207,15 +208,18 @@ public partial class MainWindow : Window
         if (ServerList.SelectedItem is not Server s) { Status("Select a server first.", true); return; }
         if (s.Link.Trim().Length == 0) { Status($"'{s.Name}' has no join link.", true); return; }
 
+        var failed = Core.LaunchExtras(_cfg.LaunchWith);
+        var warn = failed.Count > 0 ? $"  (couldn't open {string.Join(", ", failed)})" : "";
+
         string? uri;
-        try { uri = Core.Launch(s, _cfg.FiveMAppPath); }
+        try { uri = Core.Launch(s, _cfg); }
         catch (Exception ex) { Status("Launch failed: " + ex.Message, true); return; }
 
-        if (uri is null) { Status($"Handed '{s.Name}' to FiveM."); return; }
-        await Countdown(uri, s.Name);   // build/pure path: FiveM opens first, join fires after it boots
+        if (uri is null) { Status($"Handed '{s.Name}' to FiveM.{warn}", failed.Count > 0); return; }
+        await Countdown(uri, s.Name, warn);   // build/pure path: FiveM opens first, join fires after it boots
     }
 
-    async Task Countdown(string uri, string name)
+    async Task Countdown(string uri, string name, string warn = "")
     {
         _joinCts?.Cancel();
         var cts = _joinCts = new CancellationTokenSource();
@@ -229,7 +233,7 @@ public partial class MainWindow : Window
                 await Task.Delay(1000, cts.Token);
             }
             Core.Connect(uri);
-            Status($"Joining '{name}'…");
+            Status($"Joining '{name}'…{warn}", warn.Length > 0);
         }
         catch (OperationCanceledException) { /* joined early or cancelled; the handler set the status */ }
         finally
@@ -254,6 +258,15 @@ public partial class MainWindow : Window
     }
 
     // ---- settings ----
+    void AddLaunchWith_Click(object sender, RoutedEventArgs e)
+    {
+        var d = new OpenFileDialog { Title = "Pick a program or file to open with FiveM" };
+        if (d.ShowDialog() != true) return;
+        var existing = LaunchWithBox.Text.TrimEnd();
+        LaunchWithBox.Text = existing.Length == 0 ? d.FileName : existing + Environment.NewLine + d.FileName;
+        Status("Added — click Save settings to keep it.");
+    }
+
     void Browse_Click(object sender, RoutedEventArgs e)
     {
         var d = new OpenFolderDialog { Title = "Select FiveM.app folder", InitialDirectory = PathBox.Text };
@@ -268,6 +281,7 @@ public partial class MainWindow : Window
 
         _cfg.FiveMAppPath = path;
         _cfg.LinkedPaths = LinkedBox.Text.Split('\n').Select(x => x.Trim()).Where(x => x.Length > 0).ToList();
+        _cfg.LaunchWith = LaunchWithBox.Text.Split('\n').Select(x => x.Trim()).Where(x => x.Length > 0).ToList();
         _cfg.BootDelaySeconds = delay;
         Core.Save(_cfg);
         var missing = !Directory.Exists(path);

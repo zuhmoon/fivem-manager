@@ -28,6 +28,8 @@ public class Config
     public List<string> LinkedPaths { get; set; } = new() { @"data\game-storage\ros_*" };
     public List<Account> Accounts { get; set; } = new();
     public List<Server> Servers { get; set; } = new();
+    // Programs/files opened alongside FiveM on every launch. Full paths, one per entry.
+    public List<string> LaunchWith { get; set; } = new();
     public string ActiveAccount { get; set; } = "";
     public int BootDelaySeconds { get; set; } = 30;   // wait after opening FiveM (build/pure) before firing the connect URI
 }
@@ -101,7 +103,22 @@ public static class Core
     // temp shortcut explorer runs, so the parent guard is satisfied), let it boot, THEN fire the connect
     // URI at the already-running client — no rebuild since it's already on that build. The wait lives in
     // the UI so it can show a countdown and let you join early.
-    public static string? Launch(Server s, string fivemAppPath)
+    // Opens everything in LaunchWith. UseShellExecute so an .exe, a .lnk, a document or a URL all
+    // work. Returns the ones that wouldn't open - a bad entry here must never stop you joining.
+    public static List<string> LaunchExtras(IEnumerable<string> paths)
+    {
+        var failed = new List<string>();
+        foreach (var raw in paths)
+        {
+            var path = raw.Trim();
+            if (path.Length == 0) continue;
+            try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); }
+            catch { failed.Add(Path.GetFileName(path.TrimEnd('\\', '/'))); }
+        }
+        return failed;
+    }
+
+    public static string? Launch(Server s, Config c)
     {
         var uri = NormalizeTarget(s.Link);
         if (s.Pure <= 0 && string.IsNullOrWhiteSpace(s.Build))
@@ -110,7 +127,7 @@ public static class Core
             Connect(uri);
             return null;
         }
-        var exe = Path.Combine(Directory.GetParent(fivemAppPath.TrimEnd('\\', '/'))!.FullName, "FiveM.exe");
+        var exe = Path.Combine(Directory.GetParent(c.FiveMAppPath.TrimEnd('\\', '/'))!.FullName, "FiveM.exe");
         var flags = $"-pure_{(s.Pure > 0 ? s.Pure : 0)}";          // .bat passes -pure_0 explicitly even when off
         if (!string.IsNullOrWhiteSpace(s.Build)) flags += $" -b{s.Build.Trim().TrimStart('b', 'B')}";
         LaunchViaShortcut(exe, flags);
@@ -323,6 +340,10 @@ public static class Core
             foreach (var n in CacheFolders)
                 if (Directory.Exists(Path.Combine(app, "data", n))) throw new Exception($"{n} survived the clear");
             if (!File.Exists(Path.Combine(keep, "auth.dat"))) throw new Exception("clear cache ate game-storage");
+
+            // one bad "open with FiveM" entry must be reported, not thrown, and blanks ignored
+            var extras = LaunchExtras(new[] { "", "   ", Path.Combine(tmp, "definitely-not-here.exe") });
+            if (extras.Count != 1) throw new Exception($"expected 1 failed extra, got {extras.Count}");
 
             // the COM shortcut writer both the joiner and the Start menu entry depend on
             var lnk = Path.Combine(tmp, "probe.lnk");
