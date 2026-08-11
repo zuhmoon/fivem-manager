@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>FiveMManager</AssemblyName>
+    <RootNamespace>FiveMManager</RootNamespace>
+    <ApplicationIcon>logo.ico</ApplicationIcon>
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+    <Version>1.0.0</Version>
+    <!-- Velopack needs to run before any UI exists, so App owns an explicit Main instead of letting
+         the WPF SDK generate one. That means App.xaml is a Page, not the ApplicationDefinition. -->
+    <StartupObject>FiveMManager.App</StartupObject>
+  </PropertyGroup>
+  <ItemGroup>
+    <ApplicationDefinition Remove="App.xaml"/>
+    <Page Include="App.xaml"/>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Velopack" Version="1.2.0" />
+  </ItemGroup>
+</Project>

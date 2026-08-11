@@ -1,0 +1,220 @@
+<Window x:Class="FiveMManager.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="FiveM Manager" Width="980" Height="640" MinWidth="800" MinHeight="520"
+        WindowStartupLocation="CenterScreen" Icon="{StaticResource LogoIcon}"
+        Background="{StaticResource Bg}" Foreground="{StaticResource Fg}"
+        FontFamily="Segoe UI" FontSize="13">
+
+    <Grid Margin="14,12,14,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- header -->
+        <DockPanel Grid.Row="0" Margin="2,0,2,10">
+            <TextBlock DockPanel.Dock="Right" x:Name="ActiveAccountText" VerticalAlignment="Center"
+                       Foreground="{StaticResource Muted}" FontSize="12"/>
+            <Image Source="{StaticResource LogoIcon}" Width="26" Height="26" Margin="0,0,10,0"
+                   VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+            <TextBlock Text="FiveM Manager" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center"/>
+        </DockPanel>
+
+        <TabControl x:Name="Tabs" Grid.Row="1" TabStripPlacement="Left"
+                    Background="Transparent" BorderThickness="0" Padding="14,0,0,0"
+                    ItemContainerStyle="{StaticResource NavTab}">
+
+            <!-- ============ ACCOUNTS ============ -->
+            <TabItem Header="Accounts">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="250"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource Card}">
+                        <ListBox x:Name="AccountList" Background="Transparent" BorderThickness="0" Margin="4"
+                                 Foreground="{StaticResource Fg}"
+                                 HorizontalContentAlignment="Stretch"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 MouseDoubleClick="Switch_Click">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="3"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" CornerRadius="2" Background="{StaticResource Accent}"
+                                                Visibility="{Binding ActiveDot}"/>
+                                        <StackPanel Grid.Column="1" Margin="10,2,0,2">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding LastUsedText}" Style="{StaticResource Hint}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+
+                    <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                        <TextBlock Text="Save the login FiveM is using right now" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="NewAccName" Margin="0,0,0,6"/>
+                        <Button Content="Save current as new" Click="AddAccount_Click" Margin="0,0,0,14"/>
+
+                        <Button Content="Switch to selected" Style="{StaticResource Primary}" Click="Switch_Click" Margin="0,0,0,6"/>
+                        <Button Content="Update from current" Click="UpdateAccount_Click" Margin="0,0,0,6"/>
+                        <Button Content="Delete selected" Click="DeleteAccount_Click"/>
+
+                        <Border Height="1" Background="{StaticResource Line}" Margin="0,16"/>
+
+                        <Button Content="Unlink Rockstar (local)" Style="{StaticResource Destructive}" Click="Unlink_Click"/>
+                        <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0"
+                                   Text="Deletes the linked files so FiveM re-links Rockstar on next launch."/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <!-- ============ SERVERS ============ -->
+            <TabItem Header="Servers">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="290"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource Card}">
+                        <ListBox x:Name="ServerList" Background="Transparent" BorderThickness="0" Margin="4"
+                                 Foreground="{StaticResource Fg}"
+                                 HorizontalContentAlignment="Stretch"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 SelectionChanged="ServerList_SelectionChanged"
+                                 MouseDoubleClick="Launch_Click">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="6,4">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                        <TextBlock Text="{Binding Summary}" Style="{StaticResource Hint}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+
+                    <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                        <TextBlock Text="Name" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="SrvName" Margin="0,0,0,8"/>
+
+                        <TextBlock Text="Join link — cfx.re/join/…, fivem://…, or ip:port" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="SrvLink" Margin="0,0,0,8"/>
+
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Pure mode" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox x:Name="SrvPure" SelectedIndex="0">
+                                    <ComboBoxItem>Off</ComboBoxItem>
+                                    <ComboBoxItem>Level 1</ComboBoxItem>
+                                    <ComboBoxItem>Level 2</ComboBoxItem>
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Game build" Style="{StaticResource FieldLabel}"/>
+                                <TextBox x:Name="SrvBuild"/>
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,10"
+                                   Text="Build blank = server default. Pure or build set means FiveM opens first, then joins."/>
+
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="6"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="6"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Content="Add" Click="AddServer_Click"/>
+                            <Button Grid.Column="2" Content="Update" Click="UpdateServer_Click"/>
+                            <Button Grid.Column="4" Content="Delete" Click="DeleteServer_Click"/>
+                        </Grid>
+
+                        <Border Height="1" Background="{StaticResource Line}" Margin="0,10"/>
+
+                        <Button Content="Launch &amp; Join" Style="{StaticResource Primary}" FontSize="15"
+                                Height="42" Click="Launch_Click"/>
+                        <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0"
+                                   Text="Or double-click a server in the list."/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <!-- ============ SETTINGS ============ -->
+            <TabItem Header="Settings">
+                <Border Style="{StaticResource Card}" VerticalAlignment="Top">
+                    <StackPanel Margin="16">
+                        <TextBlock Text="FiveM.app folder" Style="{StaticResource FieldLabel}"/>
+                        <DockPanel Margin="0,0,0,14">
+                            <Button DockPanel.Dock="Right" Content="Browse…" Width="88" Margin="8,0,0,0" Click="Browse_Click"/>
+                            <TextBox x:Name="PathBox"/>
+                        </DockPanel>
+
+                        <TextBlock Text="Linked paths — one glob per line, relative to FiveM.app. These are the files swapped when you switch accounts."
+                                   Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="LinkedBox" AcceptsReturn="True" Height="88" Margin="0,0,0,14"
+                                 VerticalScrollBarVisibility="Auto" FontFamily="Consolas"/>
+
+                        <TextBlock Text="Connect delay (seconds) — how long to wait for FiveM to boot before firing the join, when a build or pure mode is set"
+                                   Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="DelayBox" Width="70" HorizontalAlignment="Left" Margin="0,0,0,16"/>
+
+                        <Button Content="Save settings" Style="{StaticResource Primary}" Width="130"
+                                HorizontalAlignment="Left" Click="SaveSettings_Click"/>
+
+                        <Border Height="1" Background="{StaticResource Line}" Margin="0,20"/>
+
+                        <TextBlock Text="Maintenance" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <TextBlock x:Name="VersionText" Style="{StaticResource Hint}" Margin="0,0,0,8"/>
+                        <Button Content="Check for updates" Width="150" HorizontalAlignment="Left"
+                                Margin="0,0,0,16" Click="CheckUpdates_Click"/>
+
+                        <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,8"
+                                   Text="Adds a Start menu entry pointing at this copy of the app, so you can launch it by searching. Click it again if you ever move the app."/>
+                        <Button Content="Add to Start menu" Width="150" HorizontalAlignment="Left"
+                                Margin="0,0,0,16" Click="StartMenu_Click"/>
+
+                        <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,10"
+                                   Text="Clear cache deletes cache, server-cache, server-cache-priv and nui-storage — the usual fix for stuck loading screens, missing textures and failed downloads. Servers re-download their resources on your next join. Your Rockstar link and saved accounts are not touched."/>
+                        <Button Content="Clear cache" Style="{StaticResource Destructive}" Width="130"
+                                HorizontalAlignment="Left" Click="ClearCache_Click"/>
+                    </StackPanel>
+                </Border>
+            </TabItem>
+        </TabControl>
+
+        <!-- status bar -->
+        <Border Grid.Row="2" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Margin="0,12,0,0" Padding="4,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <ProgressBar x:Name="Busy" Grid.Column="0" Width="70" Height="3" IsIndeterminate="True"
+                             Visibility="Collapsed" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                <TextBlock x:Name="StatusText" Grid.Column="1" VerticalAlignment="Center"
+                           Foreground="{StaticResource Muted}" TextTrimming="CharacterEllipsis"/>
+                <StackPanel x:Name="JoinPanel" Grid.Column="2" Orientation="Horizontal" Visibility="Collapsed">
+                    <Button Content="Join now" Click="JoinNow_Click" Margin="0,0,6,0" Padding="10,4"/>
+                    <Button Content="Cancel" Click="CancelJoin_Click" Padding="10,4"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

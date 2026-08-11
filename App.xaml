@@ -1,0 +1,130 @@
+<Application x:Class="FiveMManager.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ThemeMode="Dark">
+    <Application.Resources>
+        <ResourceDictionary>
+            <!-- ponytail: committed to one dark palette with explicit hex instead of theme-resource
+                 lookups. Fluent (ThemeMode) styles the stock controls; these cover everything custom.
+                 Want light mode too? That's a second palette + DynamicResource, not a rewrite. -->
+            <SolidColorBrush x:Key="Bg"     Color="#12141A"/>
+            <SolidColorBrush x:Key="Panel"  Color="#181B22"/>
+            <SolidColorBrush x:Key="Line"   Color="#282D38"/>
+            <SolidColorBrush x:Key="Fg"     Color="#E7E9EF"/>
+            <SolidColorBrush x:Key="Muted"  Color="#8A93A6"/>
+            <SolidColorBrush x:Key="Accent" Color="#F97316"/>
+            <SolidColorBrush x:Key="Sel"    Color="#242A38"/>
+            <SolidColorBrush x:Key="Hover"  Color="#1D212B"/>
+            <SolidColorBrush x:Key="Danger" Color="#EF4444"/>
+
+            <!-- Logo: vector, so one definition serves the window icon, the taskbar and the header at
+                 any size. make-icon.ps1 redraws these same coordinates into logo.ico for the .exe. -->
+            <DrawingImage x:Key="LogoIcon">
+                <DrawingImage.Drawing>
+                    <DrawingGroup>
+                        <!-- transparent square pins the bounds to the same 100x100 grid the .ico uses,
+                             so the mark sits identically in both instead of being cropped to its ink -->
+                        <GeometryDrawing Brush="Transparent" Geometry="M 0,0 L 100,0 L 100,100 L 0,100 Z"/>
+                        <!-- F1 = nonzero fill: the quads overlap at the joints and must union, not cancel.
+                             All six wind the same way. Keep in step with $mark in make-icon.ps1. -->
+                        <GeometryDrawing Brush="#F97316" Geometry="F1
+                            M 20,8   L 33,8   L 50,72    L 37,60   Z
+                            M 67,8   L 80,8   L 63,60    L 50,72   Z
+                            M 70,8   L 80,8   L 98,94    L 81,94   Z
+                            M 20,8   L 22.6,8 L 6.42,94  L 2,94    Z
+                            M 23.7,8 L 26.3,8 L 12.71,94 L 8.29,94 Z
+                            M 27.4,8 L 30,8   L 19,94    L 14.58,94 Z"/>
+                    </DrawingGroup>
+                </DrawingImage.Drawing>
+            </DrawingImage>
+
+            <!-- left nav rail -->
+            <Style x:Key="NavTab" TargetType="TabItem">
+                <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TabItem">
+                            <Border x:Name="B" Background="Transparent" CornerRadius="6"
+                                    Margin="0,1" Padding="12,9" MinWidth="132">
+                                <ContentPresenter ContentSource="Header" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="B" Property="Background" Value="{StaticResource Hover}"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="B" Property="Background" Value="{StaticResource Sel}"/>
+                                    <Setter Property="Foreground" Value="{StaticResource Fg}"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- orange call-to-action -->
+            <Style x:Key="Primary" TargetType="Button">
+                <Setter Property="Foreground" Value="#FFFFFF"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="B" Background="{StaticResource Accent}" CornerRadius="6" Padding="12,9">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="Opacity" Value="0.87"/></Trigger>
+                                <Trigger Property="IsPressed"   Value="True"><Setter TargetName="B" Property="Opacity" Value="0.68"/></Trigger>
+                                <Trigger Property="IsEnabled"   Value="False"><Setter TargetName="B" Property="Opacity" Value="0.35"/></Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- destructive: outlined, never a filled button you can fat-finger -->
+            <Style x:Key="Destructive" TargetType="Button">
+                <Setter Property="Foreground" Value="{StaticResource Danger}"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="B" Background="Transparent" CornerRadius="6" Padding="12,7"
+                                    BorderBrush="{StaticResource Danger}" BorderThickness="1">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="Background" Value="#2A1518"/></Trigger>
+                                <Trigger Property="IsEnabled"   Value="False"><Setter TargetName="B" Property="Opacity" Value="0.35"/></Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="Card" TargetType="Border">
+                <Setter Property="Background" Value="{StaticResource Panel}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource Line}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="CornerRadius" Value="8"/>
+            </Style>
+
+            <Style x:Key="FieldLabel" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="TextWrapping" Value="Wrap"/>
+                <Setter Property="Margin" Value="0,0,0,3"/>
+            </Style>
+
+            <Style x:Key="Hint" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="TextWrapping" Value="Wrap"/>
+            </Style>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
