@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using Microsoft.Win32;   // OpenFolderDialog
+using Velopack;
 
 namespace FiveMManager;
 
@@ -346,6 +347,11 @@ public partial class MainWindow : Window
         Status(missing ? "Settings saved — but that folder doesn't exist yet." : "Settings saved.", missing);
     }
 
+    // Velopack takes an exclusive lock on the packages folder for the duration of a download. The
+    // startup check and this button used to race for it: one won, the other threw
+    // AcquireLockFailedException and never reached the restart. Only one update op at a time now.
+    static readonly SemaphoreSlim UpdateGate = new(1, 1);
+
     // Silent on startup (download only, Velopack applies it on next launch — the Spotify behaviour);
     // loud from the button, where the user is waiting for an answer and can be asked to restart.
     async Task CheckUpdates(bool silent)
@@ -356,27 +362,44 @@ public partial class MainWindow : Window
             if (!silent) Status("This copy wasn't installed by the installer, so it can't self-update.", true);
             return;
         }
+
+        if (!silent) Status("Checking for updates…");
+        // The startup check gives way if the button is mid-flight; the button queues behind it.
+        if (!await UpdateGate.WaitAsync(silent ? 0 : 90_000))
+        {
+            if (!silent) Status("An update is already running — give it a moment.", true);
+            return;
+        }
         try
         {
-            if (!silent) Status("Checking for updates…");
+            // Already downloaded and waiting on a restart? Don't fetch it twice, just offer to apply.
+            var pending = mgr.UpdatePendingRestart;
+            if (pending is not null) { OfferRestart(mgr, pending, pending.Version.ToString(), silent); return; }
+
             var info = await mgr.CheckForUpdatesAsync();
             if (info is null) { if (!silent) Status($"You're on the latest version ({Core.CurrentVersion})."); return; }
 
-            var version = info.TargetFullRelease.Version;
+            var version = info.TargetFullRelease.Version.ToString();
             Status($"Downloading {version}…");
             await mgr.DownloadUpdatesAsync(info);
-
-            if (silent) { Status($"Version {version} downloaded — it installs next time you start the app."); return; }
-            if (Confirm($"Version {version} is ready to install.\n\nRestart now to apply it?", "Update available"))
-                mgr.ApplyUpdatesAndRestart(info);
-            else
-                Status($"Version {version} will install next time you start the app.");
+            OfferRestart(mgr, info.TargetFullRelease, version, silent);
         }
         catch (Exception ex)
         {
             Core.LogUpdateError(ex);
             if (!silent) Status("Update check failed: " + ex.Message, true);
         }
+        finally { UpdateGate.Release(); }
+    }
+
+    // ApplyUpdatesAndRestart exits this process and relaunches the new build, so nothing after it runs.
+    void OfferRestart(UpdateManager mgr, VelopackAsset asset, string version, bool silent)
+    {
+        if (silent) { Status($"Version {version} downloaded — it installs next time you start the app."); return; }
+        if (Confirm($"Version {version} is ready to install.\n\nRestart now to apply it?", "Update available"))
+            mgr.ApplyUpdatesAndRestart(asset);
+        else
+            Status($"Version {version} will install next time you start the app.");
     }
 
     async void CheckUpdates_Click(object sender, RoutedEventArgs e) => await CheckUpdates(silent: false);
