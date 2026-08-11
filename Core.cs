@@ -153,7 +153,7 @@ public static class Core
     // ---- updates ----
     // Where releases live. Not a setting: an app that lets you repoint its own update feed is an app
     // that can be pointed at someone else's build.
-    public const string UpdateRepo = "https://github.com/zuhmoon/manage5";
+    public const string UpdateRepo = "https://github.com/zuhmoon/fivem-manager";
 
     // Null when this copy wasn't installed by Velopack (a dev build, or the portable zip) - there is
     // no update channel to talk to, and asking anyway throws.
