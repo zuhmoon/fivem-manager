@@ -179,6 +179,13 @@
                                    Style="{StaticResource FieldLabel}"/>
                         <TextBox x:Name="DelayBox" Width="70" HorizontalAlignment="Left" Margin="0,0,0,14"/>
 
+                        <CheckBox x:Name="TrayBox" Margin="0,0,0,6"
+                                  Content="Minimize to the system tray instead of the taskbar"/>
+                        <CheckBox x:Name="MinOnLaunchBox" Margin="0,0,0,4"
+                                  Content="Minimize once a server launch is on its way"/>
+                        <TextBlock Style="{StaticResource Hint}" Margin="22,0,0,14"
+                                   Text="For servers with a build or pure mode, this waits until the countdown fires the join, so you can still cancel it or join early."/>
+
                         <TextBlock Text="Open with FiveM — one program or file per line, all opened when you hit Launch &amp; Join. Anything Windows can open works: an .exe, a shortcut, a document, even a link."
                                    Style="{StaticResource FieldLabel}"/>
                         <TextBox x:Name="LaunchWithBox" AcceptsReturn="True" Height="66" Margin="0,0,0,6"

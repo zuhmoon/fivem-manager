@@ -31,6 +31,8 @@ public class Config
     // Programs/files opened alongside FiveM on every launch. Full paths, one per entry.
     public List<string> LaunchWith { get; set; } = new();
     public string ActiveAccount { get; set; } = "";
+    public bool MinimizeToTray { get; set; } = false;    // minimizing hides the window to the tray
+    public bool MinimizeOnLaunch { get; set; } = false;  // get out of the way once you're joining
     public int BootDelaySeconds { get; set; } = 30;   // wait after opening FiveM (build/pure) before firing the connect URI
 }
 

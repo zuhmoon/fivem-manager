@@ -15,6 +15,7 @@ public partial class MainWindow : Window
 
     CancellationTokenSource? _joinCts;   // live boot-delay countdown, if any
     string? _pendingUri;
+    System.Windows.Forms.NotifyIcon? _tray;
 
     public class AccountRow
     {
@@ -35,6 +36,58 @@ public partial class MainWindow : Window
         // SynchronizationContext yet, so the await inside would resume on a thread-pool thread and
         // every UI touch after it throws. By Loaded, the context exists and awaits come back here.
         Loaded += async (_, _) => await CheckUpdates(silent: true);
+        StateChanged += (_, _) => { if (WindowState == WindowState.Minimized) HideToTray(); };
+    }
+
+    // ---- tray ----
+    // Built on demand and torn down whenever the window is visible, so "minimize to tray" means what
+    // it says rather than parking an icon there permanently.
+    void HideToTray()
+    {
+        if (!_cfg.MinimizeToTray) return;
+        Tray().Visible = true;
+        ShowInTaskbar = false;
+        Hide();
+    }
+
+    void RestoreFromTray()
+    {
+        Show();
+        ShowInTaskbar = true;
+        WindowState = WindowState.Normal;
+        Activate();
+        if (_tray is not null) _tray.Visible = false;
+    }
+
+    System.Windows.Forms.NotifyIcon Tray()
+    {
+        if (_tray is not null) return _tray;
+
+        // A hidden window with no way back is a trap, so the menu ships with the icon, not later.
+        var menu = new System.Windows.Forms.ContextMenuStrip();
+        menu.Items.Add("Open", null, (_, _) => RestoreFromTray());
+        menu.Items.Add("Exit", null, (_, _) => { if (_tray is not null) _tray.Visible = false; Close(); });
+
+        _tray = new System.Windows.Forms.NotifyIcon
+        {
+            // The icon is already embedded in our own .exe - no separate asset to ship or lose.
+            Icon = System.Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath!),
+            Text = "FiveM Manager",
+            ContextMenuStrip = menu,
+        };
+        _tray.MouseClick += (_, ev) => { if (ev.Button == System.Windows.Forms.MouseButtons.Left) RestoreFromTray(); };
+        return _tray;
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        _tray?.Dispose();   // otherwise the icon lingers in the tray until you hover over it
+        base.OnClosed(e);
+    }
+
+    void MinimizeAfterLaunch()
+    {
+        if (_cfg.MinimizeOnLaunch) WindowState = WindowState.Minimized;   // StateChanged sends it to the tray if enabled
     }
 
     // ---- shell ----
@@ -62,6 +115,8 @@ public partial class MainWindow : Window
         LinkedBox.Text = string.Join(Environment.NewLine, _cfg.LinkedPaths);
         LaunchWithBox.Text = string.Join(Environment.NewLine, _cfg.LaunchWith);
         DelayBox.Text = _cfg.BootDelaySeconds.ToString();
+        TrayBox.IsChecked = _cfg.MinimizeToTray;
+        MinOnLaunchBox.IsChecked = _cfg.MinimizeOnLaunch;
         VersionText.Text = $"Version {Core.CurrentVersion}";
         RefreshAccounts();
         _servers.Clear();
@@ -215,7 +270,7 @@ public partial class MainWindow : Window
         try { uri = Core.Launch(s, _cfg); }
         catch (Exception ex) { Status("Launch failed: " + ex.Message, true); return; }
 
-        if (uri is null) { Status($"Handed '{s.Name}' to FiveM.{warn}", failed.Count > 0); return; }
+        if (uri is null) { Status($"Handed '{s.Name}' to FiveM.{warn}", failed.Count > 0); MinimizeAfterLaunch(); return; }
         await Countdown(uri, s.Name, warn);   // build/pure path: FiveM opens first, join fires after it boots
     }
 
@@ -234,6 +289,7 @@ public partial class MainWindow : Window
             }
             Core.Connect(uri);
             Status($"Joining '{name}'…{warn}", warn.Length > 0);
+            MinimizeAfterLaunch();
         }
         catch (OperationCanceledException) { /* joined early or cancelled; the handler set the status */ }
         finally
@@ -247,7 +303,7 @@ public partial class MainWindow : Window
         var uri = _pendingUri;
         _joinCts?.Cancel();
         if (uri is null) return;
-        try { Core.Connect(uri); Status("Joining…"); }
+        try { Core.Connect(uri); Status("Joining…"); MinimizeAfterLaunch(); }
         catch (Exception ex) { Status("Join failed: " + ex.Message, true); }
     }
 
@@ -283,6 +339,8 @@ public partial class MainWindow : Window
         _cfg.LinkedPaths = LinkedBox.Text.Split('\n').Select(x => x.Trim()).Where(x => x.Length > 0).ToList();
         _cfg.LaunchWith = LaunchWithBox.Text.Split('\n').Select(x => x.Trim()).Where(x => x.Length > 0).ToList();
         _cfg.BootDelaySeconds = delay;
+        _cfg.MinimizeToTray = TrayBox.IsChecked == true;
+        _cfg.MinimizeOnLaunch = MinOnLaunchBox.IsChecked == true;
         Core.Save(_cfg);
         var missing = !Directory.Exists(path);
         Status(missing ? "Settings saved — but that folder doesn't exist yet." : "Settings saved.", missing);
