@@ -59,7 +59,8 @@
                         </ListBox>
                     </Border>
 
-                    <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                    <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="12,0,0,0">
                         <TextBlock Text="Save the login FiveM is using right now" Style="{StaticResource FieldLabel}"/>
                         <TextBox x:Name="NewAccName" Margin="0,0,0,6"/>
                         <Button Content="Save current as new" Click="AddAccount_Click" Margin="0,0,0,14"/>
@@ -74,6 +75,7 @@
                         <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0"
                                    Text="Deletes the linked files so FiveM re-links Rockstar on next launch."/>
                     </StackPanel>
+                    </ScrollViewer>
                 </Grid>
             </TabItem>
 
@@ -103,7 +105,8 @@
                         </ListBox>
                     </Border>
 
-                    <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                    <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="12,0,0,0">
                         <TextBlock Text="Name" Style="{StaticResource FieldLabel}"/>
                         <TextBox x:Name="SrvName" Margin="0,0,0,8"/>
 
@@ -152,12 +155,14 @@
                         <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0"
                                    Text="Or double-click a server in the list."/>
                     </StackPanel>
+                    </ScrollViewer>
                 </Grid>
             </TabItem>
 
             <!-- ============ SETTINGS ============ -->
             <TabItem Header="Settings">
-                <Border Style="{StaticResource Card}" VerticalAlignment="Top">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <Border Style="{StaticResource Card}" VerticalAlignment="Top" Margin="0,0,6,0">
                     <StackPanel Margin="16">
                         <TextBlock Text="FiveM.app folder" Style="{StaticResource FieldLabel}"/>
                         <DockPanel Margin="0,0,0,14">
@@ -202,6 +207,7 @@
                                 HorizontalAlignment="Left" Click="ClearCache_Click"/>
                     </StackPanel>
                 </Border>
+                </ScrollViewer>
             </TabItem>
         </TabControl>
 
